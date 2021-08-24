@@ -1,7 +1,8 @@
 use clap::App;
 use octocrab::{params::repos::forks::Sort, Octocrab};
 
-// mod api;
+mod api;
+mod client;
 
 #[tokio::main]
 async fn main() -> octocrab::Result<()> {
