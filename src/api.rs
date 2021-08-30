@@ -1,10 +1,14 @@
 use crate::client::*;
 use serde::{Deserialize, Serialize};
+use spinners;
+use spinners::{Spinner, Spinners};
+use std::thread::sleep;
+use std::time::Duration;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct User {
-    // #[serde(rename(deserialize = "login", serialize = "login"))]
-    // pub username: String,
+    #[serde(rename(deserialize = "login", serialize = "login"))]
+    pub username: String,
     pub name: String,
     #[serde(rename(deserialize = "type"))]
     pub user_type: UserType,
@@ -19,16 +23,28 @@ pub enum UserType {
     Orgnization,
 }
 
-impl User {
-    // print_user_profile
-    // get_users
-}
+// impl User {
+//     // print_user_profile
+//     // get_users
+// }
 
 pub async fn get_user(name: &str) {
-    let user = Client::new().get::<User>(name).await;
+    let url = format!("users{}", name);
+    let user = Client::new().get::<User>(&url).await;
+
+    let sp = Spinner::new(&Spinners::Dots9, "Getting user info".into());
+    sleep(Duration::from_secs(3));
+    sp.stop();
+
+    println!();
 
     match user {
-        Ok(success) => println!("{:?}", success),
-        Err(e) => println!("Error: {}", e),
+        Ok(success) => {
+            println!("{:?}", success)
+        }
+        Err(..) => {
+            //println!("Error: {}", e)
+            println!("Failed to get user");
+        }
     }
 }

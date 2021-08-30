@@ -12,7 +12,7 @@ pub struct Client {
 impl Client {
     pub fn new() -> Client {
         Client {
-            base_url: String::from("https://api.github.com"),
+            base_url: String::from("https://api.github.com/"),
             // headers: headers.to_string(),
         }
     }
