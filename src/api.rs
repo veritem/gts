@@ -5,10 +5,16 @@ use colorful::Colorful;
 use serde::{Deserialize, Serialize};
 use spinners;
 use spinners::{Spinner, Spinners};
+use std::cmp::Reverse;
+use std::fmt;
 use std::thread::sleep;
 use std::time::Duration;
+use tabled::{
+    papergrid::AlignmentHorizontal, Alignment, Full, Header, MaxWidth, Modify, Row, Style, Table,
+    Tabled,
+};
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct User {
     #[serde(rename(deserialize = "login", serialize = "login"))]
     pub username: String,
@@ -20,30 +26,17 @@ pub struct User {
     pub following: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Tabled)]
 pub enum UserType {
     User,
     Orgnization,
 }
 
-impl User {
-    pub fn new(&self) -> Self {
-        Self {
-            username: String::from(""),
-            name: String::from(""),
-            user_type: UserType::User,
-            location: String::from(""),
-            followers: 0,
-            following: 0,
-        }
+impl Default for UserType {
+    fn default() -> Self {
+        UserType::User
     }
 }
-
-// impl Default for User {
-//     fn Default() -> Self {
-//         User::Default()
-//     };
-// }
 
 async fn get_user_by_name(name: &str) -> Result<User, reqwest::Error> {
     let url = format!("users{}", name);
@@ -54,43 +47,51 @@ async fn get_user_by_name(name: &str) -> Result<User, reqwest::Error> {
         Err(e) => Err(e),
     }
 }
+impl fmt::Display for User {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.username)
+    }
+}
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Tabled)]
 pub struct Repo {
-    #[serde(skip_serializing, skip_deserializing)]
-    user: User,
-    private: bool,
-    name: String,
+    #[header(hidden = true)]
     id: u32,
+    name: String,
+    #[serde(skip_serializing, skip_deserializing)]
+    #[header(hidden = true)]
+    owner: User,
+    private: bool,
     fork: bool,
-    full_name: String,
-    language: String,
+    // full_name: String,
+    // language: str,
+    #[header("starts")]
     stargazers_count: u32,
     disabled: bool,
-    created_at: String,
-    updated_at: String,
+    // created_at: String,
+    // updated_at: String,
 }
 
 impl Repo {
     fn new(user: User) -> Self {
         Repo {
-            user,
+            owner: user,
             name: String::from(""),
             private: false,
             id: 0,
             fork: false,
-            full_name: String::from(""),
-            language: String::from(""),
+            // full_name: String::from(""),
+            // language: "",
             stargazers_count: 0,
             disabled: false,
-            created_at: String::from(""),
-            updated_at: String::from(""),
+            // created_at: String::from(""),
+            // updated_at: String::from(""),
         }
     }
 
     /// Get user's repostories
     async fn get_repos(&self) -> Result<Vec<Repo>, reqwest::Error> {
-        let url = format!("users/{}/repos", self.user.username);
+        let url = format!("users/{}/repos", self.owner.username);
         let repos_match = Client::new().get::<Vec<Repo>>(&url).await;
         match repos_match {
             Ok(repos) => Ok(repos),
@@ -136,8 +137,27 @@ pub async fn get_repos(name: &str) {
         Ok(user) => {
             let reps_matches = Repo::new(user).get_repos().await;
             match reps_matches {
-                Ok(repo) => {
-                    println!("{:?}", repo);
+                Ok(mut repo) => {
+                    // sort by number of starts
+                    repo.sort_by_key(|r| Reverse(r.stargazers_count));
+                    println!(
+                        "{}",
+                        Table::new(&repo)
+                            .with(Header(format!(
+                                "{} has {} repositories",
+                                name.replace("/", ""),
+                                repo.len()
+                            )))
+                            .with(Style::default())
+                            .with(
+                                Modify::new(Row(..1)) // .with(FormatWithIndex(|_, _, colum| colum.to_string()))
+                            )
+                            .with(
+                                Modify::new(Full)
+                                    .with(MaxWidth(28, "..."))
+                                    .with(Alignment::Horizontal(AlignmentHorizontal::Center))
+                            )
+                    );
                 }
                 Err(e) => {
                     println!("Error fetching reps: {}", e);
@@ -145,7 +165,6 @@ pub async fn get_repos(name: &str) {
             }
         }
         Err(..) => {
-            //println!("Error: {}", e)
             println!("Failed to get user");
         }
     }

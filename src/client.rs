@@ -31,9 +31,8 @@ impl Client {
         match resp {
             Ok(success) => {
                 let resp_text = success.text().await?;
-                println!("{}", resp_text);
-                let text_resp = serde_json::from_str(&resp_text).unwrap();
-                Ok(text_resp)
+                let text_match = serde_json::from_str(&resp_text).unwrap();
+                Ok(text_match)
             }
             Err(e) => Err(e),
         }
