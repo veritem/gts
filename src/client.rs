@@ -4,18 +4,33 @@ const API_USER_AGENT: &'static str =
 
 use serde::de::DeserializeOwned;
 
+// use crate::auth::Auth;
+
 pub struct Client {
-    /// headers: String,
+    // headers: String,
     base_url: String,
+    //auth: Auth,
+}
+
+impl Default for Client {
+    fn default() -> Self {
+        Self {
+            base_url: String::from("https://api.github.com/"),
+            //  auth: Auth::default(),
+        }
+    }
 }
 
 impl Client {
-    pub fn new() -> Client {
-        Client {
-            base_url: String::from("https://api.github.com/"),
-            // headers: headers.to_string(),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
+
+    // pub fn add_header(mut &self, header: &str) -> Self {}
+    // pub fn add_auth(mut self, token: &str) -> Self {
+    //     self.auth = Auth::PersonalToken;
+    //     self
+    // }
 
     pub async fn get<T>(&self, url: &str) -> Result<T, reqwest::Error>
     where

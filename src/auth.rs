@@ -1,6 +1,7 @@
+#[derive(Debug)]
 pub enum Auth {
     None,
-    //PersonalToken,
+    PersonalToken,
 }
 
 impl Default for Auth {
