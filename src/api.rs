@@ -53,6 +53,13 @@ impl fmt::Display for User {
     }
 }
 
+fn diplay_lang_option(opt: &Option<String>) -> String {
+    match opt {
+        Some(s) => format!("{}", s),
+        None => format!(""),
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Tabled)]
 pub struct Repo {
     #[header(hidden = true)]
@@ -63,11 +70,12 @@ pub struct Repo {
     owner: User,
     private: bool,
     fork: bool,
-    // full_name: String,
-    // language: str,
-    #[header("starts")]
+    full_name: String,
+    #[field(display_with = "diplay_lang_option")]
+    language: Option<String>,
+    #[header("stars")]
     stargazers_count: u32,
-    disabled: bool,
+    // disabled: bool,
     // created_at: String,
     // updated_at: String,
 }
@@ -80,10 +88,10 @@ impl Repo {
             private: false,
             id: 0,
             fork: false,
-            // full_name: String::from(""),
-            // language: "",
+            full_name: String::from(""),
+            language: None,
             stargazers_count: 0,
-            disabled: false,
+            // disabled: false,
             // created_at: String::from(""),
             // updated_at: String::from(""),
         }
