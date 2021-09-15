@@ -1,13 +1,34 @@
 const API_ACCEPT: &'static str = "application/vnd.github.v3+json";
 const API_USER_AGENT: &'static str =
     concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+const GITHUB_BASE_URL: &'static str = "https://api.github.com";
 
 use crate::auth::Auth;
-use serde::de::DeserializeOwned;
+use reqwest::Url;
+// use serde::de::DeserializeOwned;
 
+#[derive(Debug, Clone)]
 pub struct Client {
     client: reqwest::Client,
-    base_url: String,
+    pub base_url: String,
+}
+
+impl Default for Client {
+    fn default() -> Self {
+        Self {
+            base_url: Url::parse(GITHUB_BASE_URL).unwrap().to_string(),
+            client: reqwest::ClientBuilder::new()
+                .user_agent(API_USER_AGENT)
+                .build()
+                .unwrap(),
+        }
+    }
+}
+
+impl Client {
+    fn builder() -> ClientBuilder {
+        ClientBuilder::default()
+    }
 }
 
 pub struct ClientBuilder {
@@ -18,7 +39,7 @@ pub struct ClientBuilder {
 impl Default for ClientBuilder {
     fn default() -> Self {
         Self {
-            base_url: String::from("https://api.github.com/"),
+            base_url: format!("{}", GITHUB_BASE_URL),
             auth: Auth::default(),
         }
     }
@@ -35,7 +56,9 @@ impl ClientBuilder {
         self
     }
 
-    pub fn builder(self) -> Result<Client, ()> {
+    // access the current loged in user information
+
+    pub fn build(self) -> Result<Client, reqwest::Error> {
         let mut headers = reqwest::header::HeaderMap::new();
 
         headers.append(
@@ -60,42 +83,42 @@ impl ClientBuilder {
         })
     }
 
-    pub async fn get<T>(&self, url: &str) -> Result<T, reqwest::Error>
-    where
-        T: DeserializeOwned,
-    {
-        let mut headers = reqwest::header::HeaderMap::new();
+    // pub async fn get<T>(&self, url: &str) -> Result<T, reqwest::Error>
+    // where
+    //     T: DeserializeOwned,
+    // {
+    //     let mut headers = reqwest::header::HeaderMap::new();
 
-        headers.append(
-            reqwest::header::ACCEPT,
-            format!("{}", API_ACCEPT).parse().unwrap(),
-        );
-        headers.append(
-            reqwest::header::USER_AGENT,
-            format!("{}", API_USER_AGENT).parse().unwrap(),
-        );
+    //     headers.append(
+    //         reqwest::header::ACCEPT,
+    //         format!("{}", API_ACCEPT).parse().unwrap(),
+    //     );
+    //     headers.append(
+    //         reqwest::header::USER_AGENT,
+    //         format!("{}", API_USER_AGENT).parse().unwrap(),
+    //     );
 
-        if let Auth::PersonalToken(token) = self.auth {
-            headers.append(
-                reqwest::header::AUTHORIZATION,
-                format!("Bearer {}", token).parse().unwrap(),
-            );
-        }
+    //     if let Auth::PersonalToken(token) = self.auth {
+    //         headers.append(
+    //             reqwest::header::AUTHORIZATION,
+    //             format!("Bearer {}", token).parse().unwrap(),
+    //         );
+    //     }
 
-        let resp = reqwest::Client::new()
-            .get(format!("{}{}", &self.base_url, url))
-            .header("Accept", API_ACCEPT)
-            .default_headers(headers)
-            .send()
-            .await;
+    //     let resp = reqwest::Client::new()
+    //         .get(format!("{}{}", &self.base_url, url))
+    //         .header("Accept", API_ACCEPT)
+    //         .default_headers(headers)
+    //         .send()
+    //         .await;
 
-        match resp {
-            Ok(success) => {
-                let resp_text = success.text().await?;
-                let text_match = serde_json::from_str(&resp_text).unwrap();
-                Ok(text_match)
-            }
-            Err(e) => Err(e),
-        }
-    }
+    //     match resp {
+    //         Ok(success) => {
+    //             let resp_text = success.text().await?;
+    //             let text_match = serde_json::from_str(&resp_text).unwrap();
+    //             Ok(text_match)
+    //         }
+    //         Err(e) => Err(e),
+    //     }
+    // }
 }

@@ -98,14 +98,14 @@ impl Repo {
     }
 
     /// Get user's repostories
-    async fn get_repos(&self) -> Result<Vec<Repo>, reqwest::Error> {
-        let url = format!("users/{}/repos", self.owner.username);
-        let repos_match = Client::new().get::<Vec<Repo>>(&url).await;
-        match repos_match {
-            Ok(repos) => Ok(repos),
-            Err(e) => Err(e),
-        }
-    }
+    // async fn get_repos(&self) -> Result<Vec<Repo>, reqwest::Error> {
+    //     let url = format!("users/{}/repos", self.owner.username);
+    //     let repos_match = Client::new().get::<Vec<Repo>>(&url).await;
+    //     match repos_match {
+    //         Ok(repos) => Ok(repos),
+    //         Err(e) => Err(e),
+    //     }
+    // }
 }
 
 pub async fn get_user(name: &str) {

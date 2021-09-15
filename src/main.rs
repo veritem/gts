@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::Write;
 
-mod api;
+// mod api;
 mod auth;
 mod client;
 mod log;
@@ -47,15 +47,15 @@ async fn main() {
 
     if let Some(matches) = matches.subcommand_matches("user") {
         if matches.is_present("username") {
-            let username = format!("/{}", matches.value_of("username").unwrap());
-            api::get_user(&username).await;
+            // let username = format!("/{}", matches.value_of("username").unwrap());
+            // api::get_user(&username).await;
         }
     }
 
     if let Some(matches) = matches.subcommand_matches("pr") {
         if matches.is_present("username") {
-            let username = format!("/{}", matches.value_of("username").unwrap());
-            api::get_repos(&username).await;
+            // let username = format!("/{}", matches.value_of("username").unwrap());
+            // api::get_repos(&username).await;
         }
     }
 
@@ -107,9 +107,8 @@ fn set_env(config: &Config) {
         .unwrap();
 
     let env_setting_result = file.write_all(serde_yaml::to_string(&config).unwrap().as_bytes());
-
     match env_setting_result {
         Ok(_) => log::success("logged in successfully"),
-        Err(e) => log::error(format!("Error writing: {} ", e)),
+        Err(_) => log::error("Error writing"),
     }
 }
