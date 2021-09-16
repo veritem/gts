@@ -45,6 +45,15 @@ async fn main() {
         .subcommand(App::new("login").about("Connect gts with your gh account"))
         .get_matches();
 
+    let api_builder = client::Client::builder();
+    let config: Option<Config> = get_env();
+
+    if let Some(app_config) = config {
+        api_builder.add_auth(app_config.access_token);
+    }
+
+    // let _api_client = api_builder.build().unwrap();
+
     if let Some(matches) = matches.subcommand_matches("user") {
         if matches.is_present("username") {
             // let username = format!("/{}", matches.value_of("username").unwrap());

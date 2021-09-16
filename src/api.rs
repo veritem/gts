@@ -14,6 +14,8 @@ use tabled::{
     Tabled,
 };
 
+use crate::{Client};
+
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct User {
     #[serde(rename(deserialize = "login", serialize = "login"))]
@@ -58,6 +60,21 @@ fn diplay_lang_option(opt: &Option<String>) -> String {
         Some(s) => format!("{}", s),
         None => format!(""),
     }
+}
+
+pub struct RepoHandler{
+    client: Client;
+    owner: &str;
+    repo: &str;
+}
+
+impl RepoHandler {
+   fn new(client: &Client, owner: String, repo: String) -> Self{
+    Self{client,owner,repo}
+   }
+
+//    async fn get_repos() {
+//    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Tabled)]

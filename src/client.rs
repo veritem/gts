@@ -26,11 +26,12 @@ impl Default for Client {
 }
 
 impl Client {
-    fn builder() -> ClientBuilder {
+    pub fn builder() -> ClientBuilder {
         ClientBuilder::default()
     }
 }
 
+#[derive(Debug)]
 pub struct ClientBuilder {
     base_url: String,
     auth: Auth,
