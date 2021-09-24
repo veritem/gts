@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::Write;
 
-// mod api;
+mod api;
 mod auth;
 mod client;
 mod log;
@@ -45,19 +45,28 @@ async fn main() {
         .subcommand(App::new("login").about("Connect gts with your gh account"))
         .get_matches();
 
-    let api_builder = client::Client::builder();
     let config: Option<Config> = get_env();
+
+    let mut api_builder = client::Client::default();
 
     if let Some(app_config) = config {
         api_builder.add_auth(app_config.access_token);
     }
 
-    // let _api_client = api_builder.build().unwrap();
+    let api_client = api_builder.build().unwrap();
 
     if let Some(matches) = matches.subcommand_matches("user") {
         if matches.is_present("username") {
-            // let username = format!("/{}", matches.value_of("username").unwrap());
+            let username = format!("/{}", matches.value_of("username").unwrap());
             // api::get_user(&username).await;
+            let user_holder = api::UserHolder {
+                client: api_client,
+                username: String::from(username),
+            };
+
+            let user_req = user_holder.get_user();
+
+            println!("{}", user_req);
         }
     }
 

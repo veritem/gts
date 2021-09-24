@@ -7,10 +7,11 @@ use crate::auth::Auth;
 use reqwest::Url;
 // use serde::de::DeserializeOwned;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Client {
     client: reqwest::Client,
     pub base_url: String,
+    auth: Auth,
 }
 
 impl Default for Client {
@@ -21,45 +22,18 @@ impl Default for Client {
                 .user_agent(API_USER_AGENT)
                 .build()
                 .unwrap(),
-        }
-    }
-}
-
-impl Client {
-    pub fn builder() -> ClientBuilder {
-        ClientBuilder::default()
-    }
-}
-
-#[derive(Debug)]
-pub struct ClientBuilder {
-    base_url: String,
-    auth: Auth,
-}
-
-impl Default for ClientBuilder {
-    fn default() -> Self {
-        Self {
-            base_url: format!("{}", GITHUB_BASE_URL),
             auth: Auth::default(),
         }
     }
 }
 
-impl ClientBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    // pub fn add_header(mut &self, header: &str) -> Self {}
-    pub fn add_auth(mut self, token: String) -> Self {
+impl Client {
+    pub fn add_auth(&mut self, token: String) -> &Self {
         self.auth = Auth::PersonalToken(token);
         self
     }
 
-    // access the current loged in user information
-
-    pub fn build(self) -> Result<Client, reqwest::Error> {
+    pub fn build(self) -> Result<reqwest::Client, reqwest::Error> {
         let mut headers = reqwest::header::HeaderMap::new();
 
         headers.append(
@@ -78,48 +52,6 @@ impl ClientBuilder {
             .default_headers(headers)
             .build()?;
 
-        Ok(Client {
-            client,
-            base_url: self.base_url,
-        })
+        Ok(client)
     }
-
-    // pub async fn get<T>(&self, url: &str) -> Result<T, reqwest::Error>
-    // where
-    //     T: DeserializeOwned,
-    // {
-    //     let mut headers = reqwest::header::HeaderMap::new();
-
-    //     headers.append(
-    //         reqwest::header::ACCEPT,
-    //         format!("{}", API_ACCEPT).parse().unwrap(),
-    //     );
-    //     headers.append(
-    //         reqwest::header::USER_AGENT,
-    //         format!("{}", API_USER_AGENT).parse().unwrap(),
-    //     );
-
-    //     if let Auth::PersonalToken(token) = self.auth {
-    //         headers.append(
-    //             reqwest::header::AUTHORIZATION,
-    //             format!("Bearer {}", token).parse().unwrap(),
-    //         );
-    //     }
-
-    //     let resp = reqwest::Client::new()
-    //         .get(format!("{}{}", &self.base_url, url))
-    //         .header("Accept", API_ACCEPT)
-    //         .default_headers(headers)
-    //         .send()
-    //         .await;
-
-    //     match resp {
-    //         Ok(success) => {
-    //             let resp_text = success.text().await?;
-    //             let text_match = serde_json::from_str(&resp_text).unwrap();
-    //             Ok(text_match)
-    //         }
-    //         Err(e) => Err(e),
-    //     }
-    // }
 }
