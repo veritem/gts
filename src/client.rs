@@ -5,7 +5,6 @@ const GITHUB_BASE_URL: &'static str = "https://api.github.com";
 
 use crate::auth::Auth;
 use reqwest::Url;
-// use serde::de::DeserializeOwned;
 
 #[derive(Debug)]
 pub struct Client {

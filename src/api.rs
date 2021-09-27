@@ -1,4 +1,3 @@
-use crate::client::*;
 // use ansi_escapes;
 // use colorful::Color;
 // use colorful::Colorful;
@@ -11,21 +10,21 @@ use std::fmt;
 // use std::time::Duration;
 use tabled::Tabled;
 
-use crate::client;
+const BASE_URL: &'static str = "https://api.github.com";
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct User {
     #[serde(rename(deserialize = "login", serialize = "login"))]
     pub username: String,
-    pub name: String,
+    pub name: Option<String>,
     #[serde(rename(deserialize = "type"))]
     pub user_type: UserType,
-    pub location: String,
+    pub location: Option<String>,
     pub followers: u32,
     pub following: u32,
     pub public_repos: u32,
     pub public_gists: u32,
-    pub blog: String,
+    pub blog: Option<String>,
     pub created_at: String,
 }
 
@@ -61,15 +60,14 @@ pub struct UserHolder {
 
 impl UserHolder {
     pub async fn get_user(self) -> Result<User, reqwest::Error> {
-        let base_url = "https://api.github.com";
         let res = self
             .client
-            .get(format!("{}/users{}", base_url, self.username))
+            .get(format!("{}/users{}", BASE_URL, self.username))
             .send()
             .await?;
 
         let body = res.text().await?;
-        let user: User = serde_json::from_str(&body).unwrap();
+        let user = serde_json::from_str(&body).unwrap();
 
         Ok(user)
     }

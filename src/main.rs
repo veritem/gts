@@ -69,15 +69,24 @@ async fn main() {
             let user_req = user_holder.get_user().await;
 
             if let Ok(user) = user_req {
+                
                 let years_joined = DateTime::parse_from_rfc3339(&user.created_at)
                     .unwrap()
                     .year();
+                
                 let current_year = Utc::now().year();
 
                 let years_elapsed = current_year - years_joined;
 
+                log::clear_screen();
+
+                // Also print activities
+                // https://api.github.com/users/veritem/events/public
                 println!("\n");
-                println!("\tNames: {}", user.name);
+
+                if let Some(name) = user.name {
+                    println!("\tNames: {}", name);
+                }
                 println!("\tUsername: {}", user.username);
                 println!(
                     "\tFollowers: {}",
@@ -95,7 +104,9 @@ async fn main() {
                     "\tGists: {}",
                     user.public_gists.to_formatted_string(&Locale::en)
                 );
-                println!("\tLocation: {}", user.location);
+                if let Some(location) = user.location {
+                    println!("\tLocation: {}", location);
+                }
                 if years_elapsed > 1 {
                     println!("\tJoined: {}years ago", years_elapsed);
                 } else if years_elapsed == 1 {
@@ -105,6 +116,9 @@ async fn main() {
                 }
                 println!("\n");
             }
+        } else {
+            //TODO: handle for not found
+            println!("{:^-30}", format!("User not found!"));
         }
     }
 
