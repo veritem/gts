@@ -69,11 +69,10 @@ async fn main() {
             let user_req = user_holder.get_user().await;
 
             if let Ok(user) = user_req {
-                
                 let years_joined = DateTime::parse_from_rfc3339(&user.created_at)
                     .unwrap()
                     .year();
-                
+
                 let current_year = Utc::now().year();
 
                 let years_elapsed = current_year - years_joined;
@@ -180,5 +179,21 @@ fn set_env(config: &Config) {
     match env_setting_result {
         Ok(_) => log::success("logged in successfully"),
         Err(_) => log::error("Error writing"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{get_env, set_env, Config};
+
+    #[test]
+    fn setgetenv() {
+        let config = Config {
+            access_token: String::from("123212"),
+        };
+        set_env(&config);
+
+        let got_config: Config = get_env().unwrap();
+        assert_eq!(got_config.access_token, config.access_token);
     }
 }
