@@ -147,6 +147,10 @@ async fn main() {
 fn get_env() -> Option<Config> {
     let home = home_dir().unwrap();
 
+    // TODO:
+    // Fix and use this package
+    // https://crates.io/crates/directories
+
     let path = format!("{}/.gts.yml", home.into_os_string().into_string().unwrap());
 
     let config_match = OpenOptions::new()
@@ -195,5 +199,10 @@ mod tests {
 
         let got_config: Config = get_env().unwrap();
         assert_eq!(got_config.access_token, config.access_token);
+    }
+
+    #[test]
+    fn test_home() {
+        assert_eq!(2, 2)
     }
 }
