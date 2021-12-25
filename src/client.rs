@@ -28,6 +28,9 @@ impl Default for Client {
 
 impl Client {
     pub fn add_auth(&mut self, token: String) -> &Self {
+        if token.is_empty() {
+            return self;
+        }
         self.auth = Auth::PersonalToken(token);
         self
     }

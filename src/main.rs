@@ -52,6 +52,15 @@ async fn main() {
     let mut api_builder = client::Client::default();
 
     if let Some(app_config) = config {
+        println!("Heheheh");
+        let is_valid = is_valid_gh_token(&app_config.access_token).await;
+
+        println!("{:?}", is_valid);
+
+        if !is_valid {
+            println!("Token is not valid");
+            return;
+        }
         api_builder.add_auth(app_config.access_token);
     }
 
@@ -68,52 +77,67 @@ async fn main() {
 
             let user_req = user_holder.get_user().await;
 
-            if let Ok(user) = user_req {
-                let years_joined = DateTime::parse_from_rfc3339(&user.created_at)
-                    .unwrap()
-                    .year();
+            if let Ok(user_result) = user_req {
+                // let years_joined = DateTime::parse_from_rfc3339(&user.created_at)
+                //     .unwrap()
+                //     .year();
 
-                let current_year = Utc::now().year();
+                // if let user_result::Success = user_result {
+                //     println!("{}", user_result.login);
+                //     println!("{}", user_result.name);
+                //     println!("{}", user_result.bio);
+                //     println!("{}", user_result.location);
+                //     println!("{}", user_result.email);
+                //     println!("{}", user_result.company);
+                //     println!("{}", user_result.blog);
+                //     println!("{}", user_result.public_repos);
+                //     println!("{}", user_result.public_gists);
+                //     println!("{}", user_result.followers);
+                // }
 
-                let years_elapsed = current_year - years_joined;
+                // let current_year = Utc::now().year();
 
-                log::clear_screen();
+                // let years_elapsed = current_year - years_joined;
 
-                // Also print activities
-                // https://api.github.com/users/veritem/events/public
-                println!("\n");
+                // log::clear_screen();
 
-                if let Some(name) = user.name {
-                    println!("\tNames: {}", name);
-                }
-                println!("\tUsername: {}", user.username);
-                println!(
-                    "\tFollowers: {}",
-                    user.followers.to_formatted_string(&Locale::en)
-                );
-                println!(
-                    "\tFollows: {}",
-                    user.following.to_formatted_string(&Locale::en)
-                );
-                println!(
-                    "\tRepositories: {}",
-                    user.public_repos.to_formatted_string(&Locale::en)
-                );
-                println!(
-                    "\tGists: {}",
-                    user.public_gists.to_formatted_string(&Locale::en)
-                );
-                if let Some(location) = user.location {
-                    println!("\tLocation: {}", location);
-                }
-                if years_elapsed > 1 {
-                    println!("\tJoined: {}years ago", years_elapsed);
-                } else if years_elapsed == 1 {
-                    println!("\tJoined: a year ago");
-                } else {
-                    print!("\tJoined: This year");
-                }
-                println!("\n");
+                // // Also print activities
+                // // https://api.github.com/users/veritem/events/public
+                // println!("\n");
+
+                // if let Some(name) = user.name {
+                //     println!("\tNames: {}", name);
+                // }
+                // println!("\tUsername: {}", user.login);
+                // println!(
+                //     "\tFollowers: {}",
+                //     user.followers.to_formatted_string(&Locale::en)
+                // );
+                // println!(
+                //     "\tFollows: {}",
+                //     user.following.to_formatted_string(&Locale::en)
+                // );
+                // println!(
+                //     "\tRepositories: {}",
+                //     user.public_repos.to_formatted_string(&Locale::en)
+                // );
+                // println!(
+                //     "\tGists: {}",
+                //     user.public_gists.to_formatted_string(&Locale::en)
+                // );
+                // if let Some(location) = user.location {
+                //     println!("\tLocation: {}", location);
+                // }
+                // if years_elapsed > 1 {
+                //     println!("\tJoined: {}years ago", years_elapsed);
+                // } else if years_elapsed == 1 {
+                //     println!("\tJoined: a year ago");
+                // } else {
+                //     print!("\tJoined: This year");
+                // }
+                // println!("\n");
+                // }
+                println!("Working....");
             }
         } else {
             //TODO: handle for not found
@@ -129,7 +153,14 @@ async fn main() {
     }
 
     if let Some(..) = matches.subcommand_matches("login") {
-        if let Some(..) = get_env() {
+        if let Some(config) = get_env() {
+            let is_valid = is_valid_gh_token(&config.access_token).await;
+
+            if !is_valid {
+                println!("Token is not valid");
+                return;
+            }
+
             log::success("Already logged in!");
             return;
         }
@@ -138,6 +169,14 @@ async fn main() {
             .with_prompt("Enter your github api token")
             .interact()
             .unwrap();
+
+        // validate token
+        let is_valid = is_valid_gh_token(&access_token).await;
+
+        if !is_valid {
+            println!("Token is not valid");
+            return;
+        }
 
         let config = Config { access_token };
         set_env(&config);
@@ -184,6 +223,25 @@ fn set_env(config: &Config) {
         Ok(_) => log::success("logged in successfully"),
         Err(_) => log::error("Error writing"),
     }
+}
+
+async fn is_valid_gh_token(token: &str) -> bool {
+    let mut api_builder = client::Client::default();
+    println!("token: {}", token);
+    api_builder.add_auth(token.to_string());
+    let api_client = api_builder.build().unwrap();
+
+    let user_holder = api::UserHolder {
+        client: api_client,
+        username: String::from("/veritem"),
+    };
+
+    let user_req = user_holder.get_user().await;
+
+    if let Ok(..) = user_req {
+        return true;
+    }
+    false
 }
 
 #[cfg(test)]

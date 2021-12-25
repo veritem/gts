@@ -10,12 +10,19 @@ use std::fmt;
 // use std::time::Duration;
 use tabled::Tabled;
 
-const BASE_URL: &'static str = "https://api.github.com";
+const BASE_URL: &'static str = "https://api.github.com/";
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct User {
-    #[serde(rename(deserialize = "login", serialize = "login"))]
-    pub username: String,
+    pub login: String,
+    pub id: u64,
+    pub node_id: String,
+    pub avatar_url: String,
+    pub gravatar_id: String,
+    pub url: String,
+    pub html_url: String,
+    pub followers_url: String,
+    pub following_url: String,
     pub name: Option<String>,
     #[serde(rename(deserialize = "type"))]
     pub user_type: UserType,
@@ -42,7 +49,7 @@ impl Default for UserType {
 
 impl fmt::Display for User {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.username)
+        write!(f, "{}", self.login)
     }
 }
 
@@ -58,18 +65,39 @@ pub struct UserHolder {
     pub username: String,
 }
 
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub enum Response {
+    Success(User),
+    Error(ErrorResponse),
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ErrorResponse {
+    pub message: String,
+    // Github api does not return this field
+    //pub status: String,
+}
+
 impl UserHolder {
-    pub async fn get_user(self) -> Result<User, reqwest::Error> {
+    pub async fn get_user(self) -> Result<Response, Box<dyn std::error::Error>> {
         let res = self
             .client
-            .get(format!("{}/users{}", BASE_URL, self.username))
+            .get(format!("{}users{}", BASE_URL, self.username))
             .send()
             .await?;
 
         let body = res.text().await?;
-        let user = serde_json::from_str(&body).unwrap();
+        let user_result = serde_json::from_str(&body);
 
-        Ok(user)
+        match user_result {
+            Ok(user) => Ok(Response::Success(user)),
+            Err(e) => {
+                let error_response: ErrorResponse = serde_json::from_str(&body).unwrap();
+                println!("{}", error_response.message);
+                Err(Box::new(e))
+            }
+        }
     }
 }
 
@@ -78,9 +106,6 @@ pub struct Repo {
     #[header(hidden = true)]
     id: u32,
     name: String,
-    #[serde(skip_serializing, skip_deserializing)]
-    #[header(hidden = true)]
-    owner: User,
     private: bool,
     fork: bool,
     full_name: String,
@@ -88,9 +113,10 @@ pub struct Repo {
     language: Option<String>,
     #[header("stars")]
     stargazers_count: u32,
-    // disabled: bool,
-    // created_at: String,
-    // updated_at: String,
+    disabled: bool,
+    created_at: String,
+    updated_at: String,
+    login: String,
 }
 
 // impl Repo {
