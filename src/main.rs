@@ -51,17 +51,14 @@ async fn main() {
 
     let mut api_builder = client::Client::default();
 
+    // Runs by default
+    // If the user is not logged in, it will populate to the api builder
     if let Some(app_config) = config {
-        println!("Heheheh");
         let is_valid = is_valid_gh_token(&app_config.access_token).await;
 
-        println!("{:?}", is_valid);
-
-        if !is_valid {
-            println!("Token is not valid");
-            return;
+        if is_valid {
+            api_builder.add_auth(app_config.access_token);
         }
-        api_builder.add_auth(app_config.access_token);
     }
 
     let api_client = api_builder.build().unwrap();
@@ -77,67 +74,59 @@ async fn main() {
 
             let user_req = user_holder.get_user().await;
 
-            if let Ok(user_result) = user_req {
-                // let years_joined = DateTime::parse_from_rfc3339(&user.created_at)
-                //     .unwrap()
-                //     .year();
+            if let Ok(_user_result) = user_req {
+                match _user_result {
+                    api::Response::Success(user) => {
+                        let years_joined = DateTime::parse_from_rfc3339(&user.created_at)
+                            .unwrap()
+                            .year();
 
-                // if let user_result::Success = user_result {
-                //     println!("{}", user_result.login);
-                //     println!("{}", user_result.name);
-                //     println!("{}", user_result.bio);
-                //     println!("{}", user_result.location);
-                //     println!("{}", user_result.email);
-                //     println!("{}", user_result.company);
-                //     println!("{}", user_result.blog);
-                //     println!("{}", user_result.public_repos);
-                //     println!("{}", user_result.public_gists);
-                //     println!("{}", user_result.followers);
-                // }
+                        let current_year = Utc::now().year();
 
-                // let current_year = Utc::now().year();
+                        let years_elapsed = current_year - years_joined;
 
-                // let years_elapsed = current_year - years_joined;
+                        log::clear_screen();
 
-                // log::clear_screen();
+                        // Also print activities
+                        // https://api.github.com/users/veritem/events/public
+                        println!("\n");
 
-                // // Also print activities
-                // // https://api.github.com/users/veritem/events/public
-                // println!("\n");
-
-                // if let Some(name) = user.name {
-                //     println!("\tNames: {}", name);
-                // }
-                // println!("\tUsername: {}", user.login);
-                // println!(
-                //     "\tFollowers: {}",
-                //     user.followers.to_formatted_string(&Locale::en)
-                // );
-                // println!(
-                //     "\tFollows: {}",
-                //     user.following.to_formatted_string(&Locale::en)
-                // );
-                // println!(
-                //     "\tRepositories: {}",
-                //     user.public_repos.to_formatted_string(&Locale::en)
-                // );
-                // println!(
-                //     "\tGists: {}",
-                //     user.public_gists.to_formatted_string(&Locale::en)
-                // );
-                // if let Some(location) = user.location {
-                //     println!("\tLocation: {}", location);
-                // }
-                // if years_elapsed > 1 {
-                //     println!("\tJoined: {}years ago", years_elapsed);
-                // } else if years_elapsed == 1 {
-                //     println!("\tJoined: a year ago");
-                // } else {
-                //     print!("\tJoined: This year");
-                // }
-                // println!("\n");
-                // }
-                println!("Working....");
+                        if let Some(name) = user.name {
+                            println!("\tNames: {}", name);
+                        }
+                        println!("\tUsername: {}", user.login);
+                        println!(
+                            "\tFollowers: {}",
+                            user.followers.to_formatted_string(&Locale::en)
+                        );
+                        println!(
+                            "\tFollows: {}",
+                            user.following.to_formatted_string(&Locale::en)
+                        );
+                        println!(
+                            "\tRepositories: {}",
+                            user.public_repos.to_formatted_string(&Locale::en)
+                        );
+                        println!(
+                            "\tGists: {}",
+                            user.public_gists.to_formatted_string(&Locale::en)
+                        );
+                        if let Some(location) = user.location {
+                            println!("\tLocation: {}", location);
+                        }
+                        if years_elapsed > 1 {
+                            println!("\tJoined: {}years ago", years_elapsed);
+                        } else if years_elapsed == 1 {
+                            println!("\tJoined: a year ago");
+                        } else {
+                            print!("\tJoined: This year");
+                        }
+                        println!("\n");
+                    }
+                    api::Response::Error(error) => {
+                        println!("{:?}", error);
+                    }
+                }
             }
         } else {
             //TODO: handle for not found
@@ -156,31 +145,31 @@ async fn main() {
         if let Some(config) = get_env() {
             let is_valid = is_valid_gh_token(&config.access_token).await;
 
-            if !is_valid {
-                println!("Token is not valid");
+            if is_valid {
+                log::success("Already logged in!");
                 return;
             }
-
-            log::success("Already logged in!");
-            return;
+            login().await;
         }
-
-        let access_token = Password::with_theme(&ColorfulTheme::default())
-            .with_prompt("Enter your github api token")
-            .interact()
-            .unwrap();
-
-        // validate token
-        let is_valid = is_valid_gh_token(&access_token).await;
-
-        if !is_valid {
-            println!("Token is not valid");
-            return;
-        }
-
-        let config = Config { access_token };
-        set_env(&config);
     }
+}
+
+async fn login() {
+    let access_token = Password::with_theme(&ColorfulTheme::default())
+        .with_prompt("Enter your github api token")
+        .interact()
+        .unwrap();
+
+    // validate token
+    let is_valid = is_valid_gh_token(&access_token).await;
+
+    if !is_valid {
+        println!("Current token is not valid token");
+        return;
+    }
+
+    let config = Config { access_token };
+    set_env(&config);
 }
 
 fn get_env() -> Option<Config> {
@@ -227,7 +216,6 @@ fn set_env(config: &Config) {
 
 async fn is_valid_gh_token(token: &str) -> bool {
     let mut api_builder = client::Client::default();
-    println!("token: {}", token);
     api_builder.add_auth(token.to_string());
     let api_client = api_builder.build().unwrap();
 

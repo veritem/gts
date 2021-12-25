@@ -65,7 +65,7 @@ pub struct UserHolder {
     pub username: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Response {
     Success(User),
@@ -93,8 +93,9 @@ impl UserHolder {
         match user_result {
             Ok(user) => Ok(Response::Success(user)),
             Err(e) => {
-                let error_response: ErrorResponse = serde_json::from_str(&body).unwrap();
-                println!("{}", error_response.message);
+                // TODO: handle error
+                //let error_response: ErrorResponse = serde_json::from_str(&body).unwrap();
+                // println!("{}", error_response.message);
                 Err(Box::new(e))
             }
         }
